@@ -45,18 +45,13 @@
                         <p class="card-text">{{ post.text }}</p>
                     </div>
                     <div class="card-footer">
-                        <small class="text-muted">{{ post.date }}</small>
+                        <small class="text-muted"> Par {{ post.author }} </small>
+                        <small class="text-muted"> le {{ post.date }}</small>
                     </div>
                 </div>
 
                 <input type="submit" class="btn btn-danger" value="delete" ng-click="timeline.deletePost(post.id)" ng-show="timeline.userId === post.userId">
 
-                <!--
-                <form name="deleteForm" ng-submit="timeline.deletePost()" ng-show="timeline.userId === post.userId">
-                    <input type="hidden" ng-model="postId" ng-value="post.id">
-                    <input type="submit" class="btn btn-danger" value="delete">
-                </form>
-                -->
                 <hr>
             </div>
         </div>
@@ -95,7 +90,7 @@
                     url = "https://infestation-mtl.com/wp-content/uploads/2016/02/%C3%A9cureuil-gentil-300x250.jpg";
                 }
 
-                socket.emit('publishPost', url, text);
+                socket.emit('publishPost', url, text, timeline.username);
             };
 
             this.deletePost = function (postId) {

@@ -5,12 +5,11 @@ const app = express();
 const server = require('http').Server(app);
 const io = require('socket.io')(server);
 
-app.use( '/node_modules', express.static(path.join(__dirname, 'node_modules')) ); // Permet au client de faire des requêtes pour aller chercher les node_modules sur http://localhost:1337/node_modules
-app.use( express.static(path.join(__dirname, 'public')) ); // Sert par défaut le dossier /public sur http://localhost:1337
+app.use( '/node_modules', express.static(path.join(__dirname, 'node_modules')) );app.use( express.static(path.join(__dirname, 'public')) );
 
-var listOfUsers = [];
 var listOfPosts = [];
 var idPost = 0;
+var lastId = 0;
 
 io.on('connection', function(socket){
     console.log('a user connected');
@@ -23,6 +22,7 @@ io.on('connection', function(socket){
     var myPost = {
         url: null,
         text: null,
+        author: null,
         date: null,
         id: null,
         userId : null
@@ -31,34 +31,42 @@ io.on('connection', function(socket){
     socket.on('setUser', function(userPseudo){
         myUser.pseudo = userPseudo;
         myUser.id = socket.id;
-        console.log(myUser.id);
         socket.emit('getUserId', myUser.id);
         socket.emit('getAllPosts', listOfPosts);
     });
 
 
-    socket.on('publishPost', function(url, text){
+    socket.on('publishPost', function(url, text, author){
 
         myPost.url = url;
         myPost.text = text;
-        myPost.date = new Date();
+        myPost.author = author;
+        myPost.date = new Date().toLocaleString();
         myPost.id = idPost;
         myPost.userId = socket.id;
+        lastId = idPost;
         idPost++;
 
         listOfPosts.push(myPost);
 
-        //socket.broadcast.emit('newPosts', myPost);
         io.emit('newPosts', myPost);
     });
 
     socket.on('postToDelete', function(postId){
 
         var i = 0;
-        var total = listOfPosts.length - 1;
 
-        while ()
+        var tmpArray = [];
 
+        while (i <= listOfPosts.length - 1){
+            console.log(listOfPosts[i]);
+            if(listOfPosts[i].id !== postId){
+                tmpArray.push(listOfPosts[i]);
+            }
+            i++;
+        }
+
+        listOfPosts = tmpArray;
 
         io.emit('deletedPost', postId);
     });
