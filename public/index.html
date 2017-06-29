@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <title>My Timeline</title>
+    <link rel="stylesheet" href="node_modules/bootstrap/dist/css/bootstrap.css">
+    <script src="/node_modules/angular/angular.js"></script>
+    <script src="/socket.io/socket.io.js"></script>
+</head>
+<body ng-app="timelineApp" class="container" ng-controller="TimelineController as timeline">
+
+<div ng-hide="timeline.connected" class="well text-center">
+    <h3>Pour rejoindre la timeline, saisissez votre pseudo</h3>
+    <form class="form-inline" name="loginForm" ng-submit="timeline.login()">
+        <input type="text" class="form-control" ng-model="pseudo" placeholder="Pseudo" required>
+        <input type="submit" class="btn btn-primary" value="Rejoindre">
+    </form>
+</div>
+
+<div ng-show="timeline.connected">
+    <h3>Welcome {{ timeline.username }} </h3>
+
+    <div class="well">
+        <form class="" ng-submit="timeline.publication()">
+            <div class="form-group">
+                <label for="url">Url de l'image</label>
+                <input type="text" class="form-control" id="url" aria-describedby="url" placeholder="http://" ng-model="urlPublication">
+            </div>
+            <div class="form-group">
+                <label for="text">Text de la publication</label>
+                <textarea class="form-control" id="text" rows="3" required ng-model="textPublication"></textarea>
+            </div>
+            <input type="submit" class="btn btn-primary" value="Poster">
+        </form>
+    </div>
+
+    <div class="col-lg-9">
+
+        <div class="card-deck" ng-repeat="post in timeline.allPosts | orderBy:'':true">
+
+            <div id="{{ post.id }}">
+                <div class="card">
+                    <img class="card-img-top" src="{{ post.url }}" alt="Erreur d'url">
+                    <div class="card-block">
+                        <p class="card-text">{{ post.text }}</p>
+                    </div>
+                    <div class="card-footer">
+                        <small class="text-muted">{{ post.date }}</small>
+                    </div>
+                </div>
+
+                <input type="submit" class="btn btn-danger" value="delete" ng-click="timeline.deletePost(post.id)" ng-show="timeline.userId === post.userId">
+
+                <!--
+                <form name="deleteForm" ng-submit="timeline.deletePost()" ng-show="timeline.userId === post.userId">
+                    <input type="hidden" ng-model="postId" ng-value="post.id">
+                    <input type="submit" class="btn btn-danger" value="delete">
+                </form>
+                -->
+                <hr>
+            </div>
+        </div>
+
+    </div>
+
+</div>
+
+<script>
+
+    angular
+        .module('timelineApp', [])
+        .controller('TimelineController', function($scope) {
+            console.log("ok");
+            var socket = io();
+            var timeline = this;
+
+
+            timeline.username = "";
+            timeline.userId = null;
+            timeline.connected = false;
+            timeline.allPosts = [];
+
+            this.login = function(){
+                console.log("ok your login");
+                timeline.connected = true;
+                timeline.username = $scope.pseudo;
+                socket.emit('setUser', timeline.username);
+            };
+
+            this.publication = function () {
+                var url = $scope.urlPublication;
+                var text = $scope.textPublication;
+
+                if (url == null){
+                    url = "https://infestation-mtl.com/wp-content/uploads/2016/02/%C3%A9cureuil-gentil-300x250.jpg";
+                }
+
+                socket.emit('publishPost', url, text);
+            };
+
+            this.deletePost = function (postId) {
+                console.log(postId);
+                socket.emit('postToDelete', postId);
+            };
+
+            socket.on('getUserId', function(userId) {
+                timeline.userId = userId;
+            });
+
+            socket.on('getAllPosts', function(listOfPosts) {
+                timeline.allPosts = listOfPosts;
+            });
+
+            socket.on('newPosts', function(post) {
+                console.log(post);
+                timeline.allPosts.push(post);
+                $scope.$apply();
+            });
+
+            socket.on('deletedPost', function(postId) {
+                document.getElementById(postId).remove();
+            });
+
+
+        });
+
+</script>
+
+
+</body>
+</html>
